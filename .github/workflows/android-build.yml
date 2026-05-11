@@ -3,9 +3,6 @@ name: Android CI
 on:
   push:
     branches: [ main, develop ]
-    paths-ignore:
-      - 'README.md'
-      - '.gitignore'
   pull_request:
     branches: [ main ]
 
@@ -26,21 +23,28 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
-    - name: Cache Gradle packages
-      uses: actions/cache@v4
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
       with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
+        gradle-version: '8.2'
+    
+    - name: Create gradlew if not exists
+      run: |
+        if [ ! -f "gradlew" ]; then
+          echo "Creating gradlew wrapper..."
+          gradle wrapper
+          chmod +x gradlew
+        else
+          chmod +x gradlew
+        fi
     
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
+      continue-on-error: true
     
     - name: Run Lint Check
       run: ./gradlew lintDebug
+      continue-on-error: false
     
     - name: Build Debug APK
       run: ./gradlew assembleDebug
@@ -48,15 +52,13 @@ jobs:
     - name: Build Release APK
       run: ./gradlew assembleRelease
     
-    # UPDATED: Using v4 of upload-artifact
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
         name: GalleryApp-v1.0-debug
         path: app/build/outputs/apk/debug/app-debug.apk
-        retention-days: 30  # Optional: How long to keep the artifact
+        retention-days: 30
     
-    # UPDATED: Using v4 of upload-artifact
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
       with:
@@ -66,8 +68,3 @@ jobs:
     
     - name: Run tests
       run: ./gradlew test
-    
-    - name: Cleanup Gradle Cache
-      run: |
-        rm -f ~/.gradle/caches/modules-2/modules-2.lock
-        rm -f ~/.gradle/caches/modules-2/gc.properties
