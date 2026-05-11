@@ -1,0 +1,219 @@
+# app/proguard-rules.pro
+
+# Optimizations
+-optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
+-optimizationpasses 5
+-allowaccessmodification
+-dontpreverify
+-dontskipnonpubliclibraryclasses
+
+# Keep our application classes
+-keep class com.gallery.app.** { *; }
+-keep class com.gallery.app.data.model.** { *; }
+-keep class com.gallery.app.data.database.** { *; }
+
+# Room Database
+-keep class androidx.room.** { *; }
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class *
+-dontwarn androidx.room.paging.**
+-keepclassmembers class * extends androidx.room.RoomDatabase {
+    public static <methods>;
+}
+
+# Coroutines
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory { *; }
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler { *; }
+-keepnames class kotlinx.coroutines.android.AndroidExceptionPreHandler { *; }
+-keepnames class kotlinx.coroutines.android.AndroidDispatcherFactory { *; }
+-dontwarn kotlinx.coroutines.debug.**
+
+# LiveData and ViewModel
+-keep class androidx.lifecycle.** { *; }
+-keep class * extends androidx.lifecycle.ViewModel {
+    public <init>();
+}
+-keepclassmembers class * extends androidx.lifecycle.ViewModel {
+    <init>();
+}
+
+# Glide
+-keep public class * implements com.bumptech.glide.module.GlideModule
+-keep class com.bumptech.glide.** { *; }
+-keep public enum com.bumptech.glide.load.ImageHeaderParser$** {
+    **[] $VALUES;
+    public *;
+}
+-dontwarn com.bumptech.glide.**
+-dontnote com.bumptech.glide.**
+
+# ExoPlayer
+-keep class com.google.android.exoplayer2.** { *; }
+-dontwarn com.google.android.exoplayer2.**
+-keep interface com.google.android.exoplayer2.** { *; }
+
+# PDF Viewer
+-keep class com.github.barteksc.pdfviewer.** { *; }
+-dontwarn com.github.barteksc.pdfviewer.**
+
+# Apache POI (for document handling)
+-keep class org.apache.poi.** { *; }
+-keep class org.apache.xmlbeans.** { *; }
+-dontwarn org.apache.poi.**
+-dontwarn org.apache.xmlbeans.**
+
+# Material Design Components
+-keep class com.google.android.material.** { *; }
+-dontwarn com.google.android.material.**
+-keep class androidx.constraintlayout.** { *; }
+
+# AndroidX
+-keep class androidx.** { *; }
+-keep interface androidx.** { *; }
+-dontwarn androidx.**
+
+# Parcelable implementations
+-keep class * implements android.os.Parcelable {
+    public static final android.os.Parcelable$Creator *;
+}
+-keepclassmembers class * implements android.os.Parcelable {
+    static ** CREATOR;
+}
+
+# Serializable classes
+-keepclassmembers class * implements java.io.Serializable {
+    private static final java.io.ObjectStreamField[] serialPersistentFields;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    java.lang.Object writeReplace();
+    java.lang.Object readResolve();
+}
+
+# Enum handling
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+
+# Native methods
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# WebView
+-keepclassmembers class * extends android.webkit.WebViewClient {
+    public void *(android.webkit.WebView, java.lang.String, android.graphics.Bitmap);
+    public boolean *(android.webkit.WebView, java.lang.String);
+}
+-keepclassmembers class * extends android.webkit.WebChromeClient {
+    public void *(android.webkit.WebView, java.lang.String);
+}
+
+# Keep custom views
+-keep public class * extends android.view.View {
+    public <init>(android.content.Context);
+    public <init>(android.content.Context, android.util.AttributeSet);
+    public <init>(android.content.Context, android.util.AttributeSet, int);
+    public void set*(...);
+}
+
+# Keep setters in Views for XML attributes
+-keepclassmembers public class * extends android.view.View {
+    void set*(***);
+    *** get*();
+}
+
+# Keep callback methods
+-keepclassmembers class * {
+    void *(**On*Event);
+    void *(**On*Listener);
+}
+
+# Keep R8 optimization
+-keepclassmembers,allowobfuscation class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+# Preserve annotations
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes SourceFile
+-keepattributes LineNumberTable
+-keepattributes EnclosingMethod
+-keepattributes InnerClasses
+-keepattributes RuntimeVisibleAnnotations
+-keepattributes RuntimeInvisibleAnnotations
+
+# Keep generic types
+-keepattributes Signature
+
+# Keep exception names
+-keepattributes Exceptions
+
+# Keep inner classes
+-keepattributes InnerClasses
+
+# Keep all activities
+-keep public class * extends android.app.Activity
+-keep public class * extends android.app.Application
+-keep public class * extends android.app.Service
+-keep public class * extends android.content.BroadcastReceiver
+-keep public class * extends android.content.ContentProvider
+-keep public class * extends android.app.backup.BackupAgentHelper
+-keep public class * extends android.preference.Preference
+-keep public class * extends android.app.Fragment
+-keep public class * extends androidx.fragment.app.Fragment
+
+# Keep constructors for reflection
+-keepclassmembers class * {
+    public <init>(android.content.Context);
+    public <init>(android.content.Context, android.util.AttributeSet);
+}
+
+# Keep FileProvider
+-keep class androidx.core.content.FileProvider { *; }
+
+# Keep database-related classes
+-keep class * extends androidx.room.DatabaseConfiguration { *; }
+-keep class * extends androidx.room.InvalidationTracker { *; }
+
+# Prevent obfuscation of MediaItem class
+-keep class com.gallery.app.data.model.MediaItem {
+    public <fields>;
+    public <methods>;
+}
+
+# Keep GSON model classes
+-keep class com.google.gson.** { *; }
+-keep class com.gallery.app.data.model.** { *; }
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
+
+# Keep Dexter permissions library
+-keep class com.karumi.dexter.** { *; }
+-dontwarn com.karumi.dexter.**
+
+# Remove logging in release
+-assumenosideeffects class android.util.Log {
+    public static *** d(...);
+    public static *** v(...);
+    public static *** i(...);
+    public static *** w(...);
+    public static *** e(...);
+    public static *** wtf(...);
+    public static *** println(...);
+}
+
+# Remove debug code
+-assumenosideeffects class java.lang.System {
+    public static void out.*;
+    public static void err.*;
+    public static long currentTimeMillis();
+}
+
+# Optimization options
+-mergeinterfacesaggressively
+-allowaccessmodification
+-overloadaggressively
+-useuniqueclassmembernames
