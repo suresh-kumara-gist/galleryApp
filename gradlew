@@ -24,76 +24,41 @@
 #
 #   (1) You need a POSIX-compliant shell to run this script. If your /bin/sh is
 #       noncompliant, but you have some other compliant shell such as ksh or
-#       bash, then run 'sh' with that shell as a wrapper:
-#           ksh gradlew
-#       or
-#           bash gradlew
+#       bash, then to run this script, type that shell name before the whole
+#       command line, like:
 #
-#   (2) This script attempts to find the Gradle home directory. If the
-#       GRADLE_USER_HOME environment variable is not set, Gradle uses the
-#       Gradle user home directory as defined by the Gradle manual. The
-#       home directory is by default '.gradle' in the user's home directory,
-#       and this script uses that as the Gradle user home directory as well.
+#           ksh Gradle
 #
-#       If you have a user home directory that is not the same as the
-#       user running this script (e.g., a CI server), you may want to
-#       set the GRADLE_USER_HOME environment variable explicitly.
+#       Busybox and similar reduced shells will NOT work, because this script
+#       requires all of these POSIX shell features:
+#         * functions;
+#         * expansions «$var», «${var}», «${var:-default}», «${var+SET}»,
+#           «${var#prefix}», «${var%suffix}», and «$( cmd )»;
+#         * compound commands having a testable exit status, especially «case»;
+#         * various built-in commands including «command», «set», and «ulimit».
 #
-#   (3) The Java command to run Java will be found by searching the PATH
-#       environment variable. If Java is not found, we use the JAVA_HOME
-#       environment variable if it is set.
+#   Important for patching:
 #
-#   (4) The Gradle wrapper script caches the downloaded Gradle distribution
-#       in the GRADLE_USER_HOME directory. The distribution is validated by
-#       a SHA-256 hash. If you want to disable the cache, you may do so by
-#       giving the '--no-daemon' flag or using other options listed in the
-#       "Command Line Options" section of the Gradle manual.
+#   (2) This script targets any POSIX shell, so it avoids extensions provided
+#       by Bash, Ksh, etc; in particular arrays are avoided.
 #
-#       The distribution is downloaded from Maven Central by default. You can
-#       specify a different distribution by setting the distributionUrl
-#       property in the 'gradle-wrapper.properties' file. By default,
-#       the Gradle wrapper uses a distribution from Maven Central because
-#       that's the most reliable and works for most users. If you want to
-#       use a different distribution, note that it is encouraged to use a
-#       distribution mirror that is verified to work.
+#       The "traditional" practice of packing multiple parameters into a
+#       space-separated string is a well documented source of bugs and security
+#       problems, so this is (mostly) avoided, by progressively accumulating
+#       options in "$@", and eventually passing that to Java.
 #
-#       The distribution validation uses the SHA-256 hash of the distribution
-#       zip archive. It is recommended to use Gradle's built-in validation
-#       (via the '--status' command line option) to verify the integrity of
-#       the distribution before running any tasks.
+#       Where the inherited environment variables (DEFAULT_JVM_OPTS, JAVA_OPTS,
+#       and GRADLE_OPTS) rely on word-splitting, this is performed explicitly;
+#       see the in-line comments for details.
 #
-#       The download and validation script can be configured by adding a
-#       'gradle/wrapper/gradle-wrapper.properties' file with specific
-#       properties. The 'wrapper' task in Gradle generates this properties
-#       file for you. If you wish to configure any properties, you can specify
-#       them in a 'gradle-wrapper.properties' file and commit it to your
-#       repository along with the rest of the wrapper scripts.
+#       There are tweaks for specific operating systems such as AIX, CygWin,
+#       Darwin, MinGW, and NonStop.
 #
-#   (5) For tooling developers, if you want to use the 'GRADLE_USER_HOME'
-#       directory to store Gradle distributions, but your CI server's
-#       user home directory is not writable, you can provide a custom
-#       GRADLE_USER_HOME environment variable in your build script.
+#   (3) This script is generated from the Groovy template
+#       https://github.com/gradle/gradle/blob/HEAD/subprojects/plugins/src/main/resources/org/gradle/api/internal/plugins/unixStartScript.txt
+#       within the Gradle project.
 #
-#   (6) The initialization scripts referenced by the 'init.gradle' file
-#       may be stored in the distribution location or in the gradle user
-#       home directory. The distribution location takes precedence over
-#       the gradle user home directory. You can also specify a custom
-#       location for init scripts using the '--init-script' command line
-#       option.
-#
-#   (7) This script uses the GRADLE_EXIT_CONSOLE variable to specify that
-#       the console output for the Gradle build should use the same
-#       console encoding as the Gradle script. If you don't want that,
-#       you can unset the GRADLE_EXIT_CONSOLE environment variable or set
-#       it to 'false'.
-#
-#   (8) The performance of the 'assemble' task may be impacted by
-#       downloading Gradle distributions if your network connection
-#       is slow. To improve performance, you can configure the
-#       'org.gradle.welcome' feature flag to 'disabled' in the
-#       'gradle.properties' file. This will prevent the wrapper from
-#       downloading a new distribution on each new build if the
-#       distribution already exists.
+#       You can find Gradle at https://github.com/gradle/gradle/.
 #
 ##############################################################################
 
@@ -107,7 +72,7 @@ while
     APP_HOME=${app_path%"${app_path##*/}"}  # leaves a trailing /; empty if no leading path
     [ -h "$app_path" ]
 do
-    ls=$(ls -ld "$app_path")
+    ls=$( ls -ld "$app_path" )
     link=${ls#*' -> '}
     case $link in             #(
       /*)   app_path=$link ;; #(
@@ -120,33 +85,42 @@ done
 APP_BASE_NAME=${0##*/}
 APP_HOME=$( cd "${APP_HOME:-./}" && pwd -P ) || exit
 
-# Use the maximum available file descriptors if possible
-if command -v ulimit > /dev/null 2>&1 ; then
-    ulimit -n 4096 || true  # Ignore failure in case it's not supported
-fi
+# Use the maximum available, or set MAX_FD != -1 to use that value.
+MAX_FD=maximum
 
-# Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
-DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
+warn () {
+    echo "$*"
+} >&2
 
-# Collect all arguments for the java command, stacking in reverse order:
-#   * args from the command line
-#   * the main class name
-#   * the script class name (expected to be 'org.gradle.wrapper.GradleWrapperMain')
-#   * the jar file path (the jar file is expected to be in the same directory as this script)
-#   * all the positional arguments after '--'
+die () {
+    echo
+    echo "$*"
+    echo
+    exit 1
+} >&2
 
-set -- \
-        org.gradle.wrapper.GradleWrapperMain \
-        "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" \
-        "$@"
+# OS specific support (must be 'true' or 'false').
+cygwin=false
+msys=false
+darwin=false
+nonstop=false
+case "$( uname )" in                #(
+  CYGWIN* )         cygwin=true  ;; #(
+  Darwin* )         darwin=true  ;; #(
+  MSYS* | MINGW* )  msys=true    ;; #(
+  NONSTOP* )        nonstop=true ;;
+esac
+
+CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+
 
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
     if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
         # IBM's JDK on AIX uses strange locations for the executables
-        JAVACMD="$JAVA_HOME/jre/sh/java"
+        JAVACMD=$JAVA_HOME/jre/sh/java
     else
-        JAVACMD="$JAVA_HOME/bin/java"
+        JAVACMD=$JAVA_HOME/bin/java
     fi
     if [ ! -x "$JAVACMD" ] ; then
         die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
@@ -156,7 +130,7 @@ location of your Java installation."
     fi
 else
     JAVACMD=java
-    if ! command -v java > /dev/null 2>&1
+    if ! command -v java >/dev/null 2>&1
     then
         die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
 
@@ -166,32 +140,109 @@ location of your Java installation."
 fi
 
 # Increase the maximum file descriptors if we can.
-if [ "$(uname)" = "Darwin" ] && [ -x "/usr/sbin/sysctl" ] && [ "$(/usr/sbin/sysctl -n kern.maxfilesperproc 2>/dev/null || echo 4096)" -lt 65536 ]; then
-    (
-        /usr/sbin/sysctl -n kern.maxfilesperproc 2>/dev/null
-        /usr/sbin/sysctl -n kern.maxfiles 2>/dev/null
-    ) || true
-    /usr/sbin/sysctl -w kern.maxfilesperproc=65536 >/dev/null 2>&1 || true
-    /usr/sbin/sysctl -w kern.maxfiles=65536 >/dev/null 2>&1 || true
-    ulimit -n 65536 2>/dev/null || true
+if ! "$cygwin" && ! "$darwin" && ! "$nonstop" ; then
+    case $MAX_FD in #(
+      max*)
+        # In POSIX sh, ulimit -H is undefined. That's why the result is checked to see if it worked.
+        # shellcheck disable=SC3045
+        MAX_FD=$( ulimit -H -n ) ||
+            warn "Could not query maximum file descriptor limit"
+    esac
+    case $MAX_FD in  #(
+      '' | soft) :;; #(
+      *)
+        # In POSIX sh, ulimit -n is undefined. That's why the result is checked to see if it worked.
+        # shellcheck disable=SC3045
+        ulimit -n "$MAX_FD" ||
+            warn "Could not set maximum file descriptor limit to $MAX_FD"
+    esac
 fi
 
-# Collect all arguments for the java command, following the shell quoting and substitution rules
-eval set -- "$DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS \"\$@\""
+# Collect all arguments for the java command, stacking in reverse order:
+#   * args from the command line
+#   * the main class name
+#   * -classpath
+#   * -D...appname settings
+#   * --module-path (only if needed)
+#   * DEFAULT_JVM_OPTS, JAVA_OPTS, and GRADLE_OPTS environment variables.
 
-# Use a safe default locale if LC_ALL is not set
-if [ -z "$LC_ALL" ]; then
-    LC_ALL=C
+# For Cygwin or MSYS, switch paths to Windows format before running java
+if "$cygwin" || "$msys" ; then
+    APP_HOME=$( cygpath --path --mixed "$APP_HOME" )
+    CLASSPATH=$( cygpath --path --mixed "$CLASSPATH" )
+
+    JAVACMD=$( cygpath --unix "$JAVACMD" )
+
+    # Now convert the arguments - kludge to limit ourselves to /bin/sh
+    for arg do
+        if
+            case $arg in                                #(
+              -*)   false ;;                            # don't mess with options #(
+              /?*)  t=${arg#/} t=/${t%%/*}              # looks like a POSIX filepath
+                    [ -e "$t" ] ;;                      #(
+              *)    false ;;
+            esac
+        then
+            arg=$( cygpath --path --ignore --mixed "$arg" )
+        fi
+        # Roll the args list around exactly as many times as the number of
+        # args, so each arg winds up back in the position where it started, but
+        # possibly modified.
+        #
+        # NB: a `for` loop captures its iteration list before it begins, so
+        # changing the positional parameters here affects neither the number of
+        # iterations, nor the values presented in `arg`.
+        shift                   # remove old arg
+        set -- "$@" "$arg"      # push replacement arg
+    done
 fi
 
-# Determine the Gradle user home directory, which must exist for the wrapper to work
-if [ -n "$GRADLE_USER_HOME" ]; then
-    GRADLE_USER_HOME="$GRADLE_USER_HOME"
-else
-    GRADLE_USER_HOME="$HOME/.gradle"
+
+# Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
+DEFAULT_JVM_OPTS='-Dfile.encoding=UTF-8 "-Xmx64m" "-Xms64m"'
+
+# Collect all arguments for the java command;
+#   * $DEFAULT_JVM_OPTS, $JAVA_OPTS, and $GRADLE_OPTS can contain fragments of
+#     shell script including quotes and variable substitutions, so put them in
+#     double quotes to make sure that they get re-expanded; and
+#   * put everything else in single quotes, so that it's not re-expanded.
+
+set -- \
+        "-Dorg.gradle.appname=$APP_BASE_NAME" \
+        -classpath "$CLASSPATH" \
+        org.gradle.wrapper.GradleWrapperMain \
+        "$@"
+
+# Stop when "xargs" is not available.
+if ! command -v xargs >/dev/null 2>&1
+then
+    die "xargs is not available"
 fi
 
-mkdir -p "$GRADLE_USER_HOME" 2>/dev/null || true
+# Use "xargs" to parse quoted args.
+#
+# With -n1 it outputs one arg per line, with the quotes and backslashes removed.
+#
+# In Bash we could simply go:
+#
+#   readarray ARGS < <( xargs -n1 <<<"$var" ) &&
+#   set -- "${ARGS[@]}" "$@"
+#
+# but POSIX shell has neither arrays nor command substitution, so instead we
+# post-process each arg (as a line of input to sed) to backslash-escape any
+# character that might be a shell metacharacter, then use eval to reverse
+# that process (while maintaining the separation between arguments), and wrap
+# the whole thing up as a single "set" statement.
+#
+# This will of course break if any of these variables contains a newline or
+# an unmatched quote.
+#
 
-# Execute the wrapper, preserving arguments and quoting special characters (like `~` or `$')
-exec "$JAVACMD" "${@}"
+eval "set -- $(
+        printf '%s\n' "$DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS" |
+        xargs -n1 |
+        sed ' s~[^-[:alnum:]+,./:=@_]~\\&~g; ' |
+        tr '\n' ' '
+    )" '"$@"'
+
+exec "$JAVACMD" "$@"
