@@ -23,11 +23,18 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
-    - name: Make gradlew executable
-      run: chmod +x gradlew
+    - name: Generate Gradle wrapper
+      run: |
+        if [ ! -f "gradlew" ]; then
+          echo "Generating Gradle wrapper..."
+          gradle wrapper --gradle-version 8.2
+          chmod +x gradlew
+        fi
     
     - name: Build Debug APK
-      run: ./gradlew assembleDebug --stacktrace
+      run: |
+        chmod +x gradlew
+        ./gradlew assembleDebug --stacktrace
     
     - name: Build Release APK
       run: ./gradlew assembleRelease --stacktrace
