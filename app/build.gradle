@@ -43,6 +43,17 @@ android {
     kotlinOptions {
         jvmTarget = '17'
     }
+
+    lint {
+        baseline = file("lint-baseline.xml")
+        checkReleaseBuilds = true
+        abortOnError = false
+        htmlReport = true
+        xmlReport = true
+        textReport = false
+        warningsAsErrors = false
+        checkDependencies = true
+    }    
 }
 
 dependencies {
